@@ -1,0 +1,130 @@
+﻿@model List<claimSystem3.Models.MonthlyClaim>
+@{
+    ViewData["Title"] = "HR View - Contract Monthly Claim System";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-4">
+    <h2><i class="fas fa-users"></i> HR Dashboard</h2>
+    <p class="text-muted">Process payments and manage lecturer data.</p>
+
+    <div class="card">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0"><i class="fas fa-check-circle"></i> Approved Claims Ready for Payment</h5>
+        </div>
+        <div class="card-body">
+            @if (Model.Any())
+            {
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Claim ID</th>
+                            <th>Lecturer</th>
+                            <th>Module</th>
+                            <th>Hours</th>
+                            <th>Rate (R)</th>
+                            <th>Total (R)</th>
+                            <th>Submission Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var claim in Model)
+                        {
+                            <tr>
+                                <td>CLM-@claim.Id.ToString("D4")</td>
+                                <td>@(claim.Lecturer?.FirstName ?? "N/A") @(claim.Lecturer?.LastName ?? "")</td>
+                                <td>@claim.ModuleName</td>
+                                <td>@claim.HoursWorked</td>
+                                <td>@claim.HourlyRate.ToString("F2")</td>
+                                <td class="fw-bold text-success">@claim.TotalAmount.ToString("F2")</td>
+                                <td>@claim.SubmissionDate.ToString("yyyy-MM-dd")</td>
+                                <td>
+                                    <form asp-action="ProcessPayment" method="post" class="d-inline">
+                                        <input type="hidden" name="claimId" value="@claim.Id" />
+                                        <button type="submit" class="btn btn-success btn-sm">
+                                            <i class="fas fa-money-bill-wave"></i> Process Payment
+                                        </button>
+                                    </form>
+                                    @if (!string.IsNullOrEmpty(claim.DocumentPath))
+                                    {
+                                        <a href="~/uploads/@claim.DocumentPath" target="_blank" class="btn btn-info btn-sm">
+                                            <i class="fas fa-file-alt"></i> View Doc
+                                        </a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> No approved claims pending payment.
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Automated Report Generation -->
+    <div class="card mt-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Automated Reports</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5>Monthly Claims Report</h5>
+                            <p class="text-muted">Generate summary of all claims for this month</p>
+                            <a href="#" class="btn btn-outline-primary">
+                                <i class="fas fa-download"></i> Generate Report
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5>Payment Batch</h5>
+                            <p class="text-muted">Create payment batch for approved claims</p>
+                            <a href="#" class="btn btn-outline-success">
+                                <i class="fas fa-file-invoice-dollar"></i> Create Batch
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5>Lecturer Data</h5>
+                            <p class="text-muted">Manage lecturer information</p>
+                            <a href="#" class="btn btn-outline-info">
+                                <i class="fas fa-user-cog"></i> Manage Lecturers
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-calculation functionality
+        function calculateTotal() {
+            const hours = parseFloat($('.hours-input').val()) || 0;
+            const rate = parseFloat($('.rate-input').val()) || 0;
+            const total = hours * rate;
+            $('#totalAmount').text('R ' + total.toFixed(2));
+        }
+
+        $(document).ready(function() {
+            $('.hours-input, .rate-input').on('input', calculateTotal);
+            calculateTotal(); // Initial calculation
+        });
+    </script>
+}
