@@ -1,0 +1,160 @@
+﻿@{
+    ViewData["Title"] = "Dashboard - Contract Monthly Claim System";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    // Use real data from ViewBag instead of hardcoded values
+    var userRole = ViewBag.UserRole as string ?? "Lecturer";
+    var userName = ViewBag.UserName as string ?? "User";
+
+    // FIX THIS LINE - Change from Claim to MonthlyClaim
+    var recentClaims = ViewBag.RecentClaims as List<MonthlyClaim> ?? new List<MonthlyClaim>();
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-tachometer-alt"></i> Dashboard</h2>
+        <div>
+            <span class="badge bg-success me-2">Logged in as @userName</span>
+            <span class="badge bg-info">@userRole</span>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card bg-light mb-3">
+                <div class="card-body">
+                    <h4 class="card-title">Quick Actions</h4>
+                    <div class="d-flex flex-wrap gap-3">
+                        @if (userRole == "Lecturer")
+                        {
+                            <a asp-controller="Claim" asp-action="Submit" class="btn btn-primary">
+                                <i class="fas fa-plus-circle"></i> Submit New Claim
+                            </a>
+                        }
+                        <a asp-controller="Claim" asp-action="Status" class="btn btn-info">
+                            <i class="fas fa-history"></i> View Claim Status
+                        </a>
+                        @if (userRole == "Coordinator" || userRole == "Manager")
+                        {
+                            <a asp-controller="Claim" asp-action="Approve" class="btn btn-warning">
+                                <i class="fas fa-check-circle"></i> Approve Claims
+                            </a>
+                        }
+                        @if (userRole == "HR")
+                        {
+                            <a asp-controller="Claim" asp-action="HRView" class="btn btn-success">
+                                <i class="fas fa-users"></i> HR Dashboard
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        @if (userRole == "Lecturer")
+        {
+            <div class="col-md-4">
+                <div class="card text-white bg-primary mb-3">
+                    <div class="card-body">
+                        <h5><i class="fas fa-plus-circle"></i> Submit New Claim</h5>
+                        <p>Enter teaching hours and upload supporting documents.</p>
+                        <a asp-controller="Claim" asp-action="Submit" class="btn btn-light">Go</a>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="col-md-4">
+            <div class="card text-white bg-info mb-3">
+                <div class="card-body">
+                    <h5><i class="fas fa-history"></i> Claim History</h5>
+                    <p>Track the status of your submitted claims.</p>
+                    <a asp-controller="Claim" asp-action="Status" class="btn btn-light">View</a>
+                </div>
+            </div>
+        </div>
+
+        @if (userRole == "Coordinator" || userRole == "Manager")
+        {
+            <div class="col-md-4">
+                <div class="card text-white bg-warning mb-3">
+                    <div class="card-body">
+                        <h5><i class="fas fa-check-circle"></i> Approvals</h5>
+                        <p>Review and approve/reject pending claims.</p>
+                        <a asp-controller="Claim" asp-action="Approve" class="btn btn-light">Check</a>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (userRole == "HR")
+        {
+            <div class="col-md-4">
+                <div class="card text-white bg-success mb-3">
+                    <div class="card-body">
+                        <h5><i class="fas fa-users"></i> HR Dashboard</h5>
+                        <p>Process payments and manage claims.</p>
+                        <a asp-controller="Claim" asp-action="HRView" class="btn btn-light">Go</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (userRole == "Lecturer" && recentClaims.Any())
+    {
+        <div class="mt-4">
+            <h4>Recent Claims</h4>
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Claim ID</th>
+                        <th>Date</th>
+                        <th>Module</th>
+                        <th>Hours</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var claim in recentClaims)
+                    {
+                        <tr>
+                            <td>CLM-@claim.Id.ToString("D4")</td>
+                            <td>@claim.SubmissionDate.ToString("yyyy-MM-dd")</td>
+                            <td>@claim.ModuleName</td>
+                            <td>@claim.HoursWorked</td>
+                            <td>R @claim.TotalAmount.ToString("F2")</td>
+                            <td>
+                                <span class="badge @GetStatusBadgeClass(claim.Status)">
+                                    @claim.Status
+                                </span>
+                            </td>
+                            <td>
+                                <a asp-controller="Claim" asp-action="Status" class="btn btn-sm btn-outline-primary">View</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@functions {
+    public string GetStatusBadgeClass(ClaimStatus status)
+    {
+        return status switch
+        {
+            ClaimStatus.Pending => "bg-warning",
+            ClaimStatus.ApprovedByCoordinator => "bg-info",
+            ClaimStatus.ApprovedByManager => "bg-success",
+            ClaimStatus.RejectedByCoordinator or ClaimStatus.RejectedByManager => "bg-danger",
+            ClaimStatus.Paid => "bg-secondary",
+            _ => "bg-secondary"
+        };
+    }
+}
